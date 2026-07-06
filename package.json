@@ -10,17 +10,16 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "npx prisma generate && tsc",
-    "start": "node dist/server.js",
-    "postinstall": "npx prisma generate"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@clerk/express": "^2.1.35",
-    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/adapter-pg": "^6.19.3",
     "@prisma/client": "^6.19.3",
-    "@prisma/config": "^7.8.0",
+    "@prisma/config": "^6.19.3",
     "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -28,7 +27,6 @@
     "helmet": "^8.2.0",
     "multer": "^2.2.0",
     "pg": "^8.22.0",
-    "prisma": "^6.19.3",
     "socket.io": "^4.8.3",
     "tsx": "^4.22.4",
     "winston": "^3.19.0",
@@ -40,6 +38,7 @@
     "@types/multer": "^2.1.0",
     "@types/node": "^26.0.0",
     "@types/pg": "^8.20.0",
+    "prisma": "^6.19.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.2"
   }
