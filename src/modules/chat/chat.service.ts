@@ -8,19 +8,52 @@ export async function listChatUsers(currentUserId: number) {
       }
     });
 
-    // Sorting locally to match COALESCE logic, as Prisma orderBy doesn't directly support COALESCE
-    users.sort((a, b) => {
+    const recentMessages = await prisma.directMessage.groupBy({
+      by: ['senderUserId', 'recipientUserId'],
+      where: {
+        OR: [
+          { senderUserId: currentUserId, deletedBySender: false },
+          { recipientUserId: currentUserId, deletedByRecipient: false }
+        ]
+      },
+      _max: {
+        createdAt: true
+      }
+    });
+
+    const lastActivityMap = new Map<number, Date>();
+    for (const rm of recentMessages) {
+      const otherId = rm.senderUserId === currentUserId ? rm.recipientUserId : rm.senderUserId;
+      const createdAt = rm._max.createdAt;
+      if (createdAt) {
+        const currentMax = lastActivityMap.get(otherId);
+        if (!currentMax || createdAt > currentMax) {
+          lastActivityMap.set(otherId, createdAt);
+        }
+      }
+    }
+
+    const mappedUsers = users.map((row) => ({
+      id: row.id,
+      displayName: row.displayName,
+      handle: row.handle,
+      avatarUrl: row.avatarUrl,
+      lastActivityAt: lastActivityMap.get(row.id)?.toISOString() || null,
+    }));
+
+    mappedUsers.sort((a, b) => {
+      if (a.lastActivityAt && b.lastActivityAt) {
+        return new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime();
+      }
+      if (a.lastActivityAt) return -1;
+      if (b.lastActivityAt) return 1;
+
       const nameA = a.displayName || a.handle || 'User';
       const nameB = b.displayName || b.handle || 'User';
       return nameA.localeCompare(nameB);
     });
 
-    return users.map((row) => ({
-      id: row.id,
-      displayName: row.displayName,
-      handle: row.handle,
-      avatarUrl: row.avatarUrl,
-    }));
+    return mappedUsers;
   } catch (err) {
     throw err;
   }
