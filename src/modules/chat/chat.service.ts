@@ -30,18 +30,20 @@ export async function listDirectMessages(params: {
   userId: number;
   otherUserId: number;
   limit: number;
+  cursor?: number;
 }) {
   try {
-    const { userId, otherUserId, limit } = params;
+    const { userId, otherUserId, limit, cursor } = params;
     const setLimit = Math.min(Math.max(limit || 50, 1), 200);
 
     const messages = await prisma.directMessage.findMany({
       where: {
         OR: [
-          { senderUserId: userId, recipientUserId: otherUserId },
-          { senderUserId: otherUserId, recipientUserId: userId }
+          { senderUserId: userId, recipientUserId: otherUserId, deletedBySender: false },
+          { senderUserId: otherUserId, recipientUserId: userId, deletedByRecipient: false }
         ]
       },
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { createdAt: "desc" },
       take: setLimit,
       include: {
@@ -122,4 +124,35 @@ export async function createDirectMessage(params: {
       avatarUrl: message.recipient.avatarUrl,
     },
   };
+}
+
+export async function clearDirectMessages(params: {
+  userId: number;
+  otherUserId: number;
+}) {
+  const { userId, otherUserId } = params;
+
+  // Mark messages sent by the user as deleted by sender
+  await prisma.directMessage.updateMany({
+    where: {
+      senderUserId: userId,
+      recipientUserId: otherUserId,
+    },
+    data: {
+      deletedBySender: true,
+    },
+  });
+
+  // Mark messages received by the user as deleted by recipient
+  await prisma.directMessage.updateMany({
+    where: {
+      senderUserId: otherUserId,
+      recipientUserId: userId,
+    },
+    data: {
+      deletedByRecipient: true,
+    },
+  });
+
+  return { success: true };
 }

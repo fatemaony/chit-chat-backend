@@ -118,6 +118,8 @@ model DirectMessage {
   recipientUserId   Int      @map("recipient_user_id")
   body              String?
   imageUrl          String?  @map("image_url")
+  deletedBySender   Boolean  @default(false) @map("deleted_by_sender")
+  deletedByRecipient Boolean @default(false) @map("deleted_by_recipient")
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   sender            User     @relation("SenderDirectMessage", fields: [senderUserId], references: [id], onDelete: Cascade)
